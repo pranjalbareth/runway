@@ -1,0 +1,84 @@
+.log-pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  height: 320px;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.log-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+}
+
+.log-conn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.log-conn.connected { color: var(--success); }
+.log-conn.disconnected { color: var(--text3); }
+
+.log-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.log-empty {
+  color: var(--text3);
+  font-style: italic;
+}
+
+.log-line {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.log-ts {
+  color: var(--text3);
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.log-text {
+  color: var(--text2);
+  word-break: break-all;
+}
+
+.log-text:has(+ .log-text) { color: var(--text); }
+
+.log-status {
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.log-status--running { color: var(--success); background: rgba(34,204,102,0.06); }
+.log-status--failed { color: var(--danger); background: rgba(255,68,68,0.06); }
+.log-status--destroyed { color: var(--text3); background: var(--bg1); }
+.log-status--provisioning { color: var(--warning); background: rgba(255,170,0,0.06); }
+.log-status--destroying { color: var(--danger); background: rgba(255,68,68,0.06); }

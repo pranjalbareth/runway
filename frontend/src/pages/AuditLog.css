@@ -1,0 +1,50 @@
+.audit { max-width: 1000px; }
+
+.audit-loading, .audit-empty {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text3);
+  padding: 40px 0;
+}
+
+.audit-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.audit-row {
+  display: grid;
+  grid-template-columns: 160px 80px 110px 70px 1fr;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.audit-row:last-child { border-bottom: none; }
+
+.audit-row--header {
+  background: var(--bg2);
+  color: var(--text3);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.audit-row:not(.audit-row--header) { background: var(--bg1); }
+.audit-row:not(.audit-row--header):hover { background: var(--bg2); }
+
+.audit-ts { color: var(--text3); }
+.audit-env { color: var(--text3); }
+.audit-msg { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.audit-action--provision { color: var(--info); }
+.audit-action--destroy { color: var(--danger); }
+
+.audit-status--success { color: var(--success); }
+.audit-status--failed { color: var(--danger); }

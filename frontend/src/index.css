@@ -1,0 +1,102 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --bg1: #111111;
+  --bg2: #181818;
+  --bg3: #222222;
+  --border: #2a2a2a;
+  --border-hi: #3a3a3a;
+  --text: #e8e8e4;
+  --text2: #888884;
+  --text3: #555552;
+  --accent: #c8f135;
+  --accent2: #9bc41a;
+  --danger: #ff4444;
+  --warning: #ffaa00;
+  --success: #22cc66;
+  --info: #4488ff;
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius: 4px;
+  --radius-lg: 8px;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  font-family: var(--font-display);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, select {
+  font-family: var(--font-mono);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 13px;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+select option { background: var(--bg2); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.provisioning { color: var(--warning); background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.2); }
+.badge.running { color: var(--success); background: rgba(34,204,102,0.1); border: 1px solid rgba(34,204,102,0.2); }
+.badge.destroying { color: var(--danger); background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.2); }
+.badge.destroyed { color: var(--text3); background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+.badge.failed { color: var(--danger); background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.2); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.badge.provisioning::before,
+.badge.destroying::before {
+  animation: pulse 1.2s ease-in-out infinite;
+}
