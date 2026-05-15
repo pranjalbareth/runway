@@ -1,4 +1,4 @@
-# ✈️ Runway Internal Developer Platform
+# ▲ Runway - Internal Developer Platform
 
 A self-service IDP that lets developers provision isolated environments via a web UI. Terraform runs under the hood, streaming live output to the browser over WebSockets. Includes a policy engine, TTL-based auto-destroy, and a full audit log.
 
