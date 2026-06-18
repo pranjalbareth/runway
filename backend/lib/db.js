@@ -42,7 +42,30 @@ const SCHEMA = `
     line TEXT NOT NULL,
     timestamp TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS plugins (
+    id TEXT PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'inactive',
+    last_check_at TEXT,
+    last_check_ok INTEGER,
+    last_check_message TEXT,
+    activated_at TEXT
+  );
 `
+
+const PLUGIN_SEEDS = ['docker', 'mockcloud', 'aws']
+
+function seedPlugins() {
+  for (const id of PLUGIN_SEEDS) {
+    const existing = getOne('SELECT id FROM plugins WHERE id = ?', [id])
+    if (!existing) {
+      runQuery(
+        'INSERT INTO plugins (id, status) VALUES (?, ?)',
+        [id, 'inactive']
+      )
+    }
+  }
+}
 
 function persist() {
   if (!db) return
@@ -104,6 +127,7 @@ async function initDb() {
   }
 
   db.run(SCHEMA)
+  seedPlugins()
   persist()
   console.log('Database initialized')
   return db
@@ -145,7 +169,7 @@ const envQueries = {
   },
 
   setTtlScheduled: (id, scheduledAt) => {
-    runQuery('UPDATE environments SET ttl_scheduled_at = ? WHERE id = ?', [scheduledAt, id])
+    runQuery('UPDATE environments SET ttl_scheduled_at = ?, expires_at = ? WHERE id = ?', [scheduledAt, scheduledAt, id])
   },
 
   getPendingTtl: () => getAll(
@@ -187,4 +211,26 @@ const logQueries = {
   )
 }
 
-module.exports = { initDb, getDb, envQueries, auditQueries, logQueries }
+// Plugin queries
+const pluginQueries = {
+  getAll: () => getAll('SELECT * FROM plugins ORDER BY id ASC'),
+
+  getById: (id) => getOne('SELECT * FROM plugins WHERE id = ?', [id]),
+
+  setStatus: (id, status) => {
+    const now = new Date().toISOString()
+    runQuery(
+      'UPDATE plugins SET status = ?, activated_at = ? WHERE id = ?',
+      [status, status === 'active' ? now : null, id]
+    )
+  },
+
+  recordCheck: (id, ok, message) => {
+    runQuery(
+      'UPDATE plugins SET last_check_at = ?, last_check_ok = ?, last_check_message = ? WHERE id = ?',
+      [new Date().toISOString(), ok ? 1 : 0, message || null, id]
+    )
+  }
+}
+
+module.exports = { initDb, getDb, envQueries, auditQueries, logQueries, pluginQueries }
