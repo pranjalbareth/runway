@@ -1,8 +1,9 @@
 const express = require('express')
 const { v4: uuidv4 } = require('uuid')
-const { envQueries, auditQueries } = require('../lib/db')
+const { envQueries, auditQueries, pluginQueries } = require('../lib/db')
 const { evaluatePolicies } = require('../lib/policy')
 const { provision, destroy } = require('../lib/terraform')
+const { getById: getTemplateById } = require('../lib/templates')
 
 const router = express.Router()
 
@@ -52,6 +53,23 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'invalid template identifier' })
   }
 
+  // Resolve template + check plugin gating
+  const templateDef = getTemplateById(sanitizedTemplate)
+  if (!templateDef) {
+    return res.status(404).json({ error: `unknown template: ${sanitizedTemplate}` })
+  }
+  const required = templateDef.requiredPlugins || []
+  const activePlugin = required.find((id) => {
+    const row = pluginQueries.getById(id)
+    return row && row.status === 'active'
+  })
+  if (required.length > 0 && !activePlugin) {
+    return res.status(403).json({
+      error: `Cannot provision "${templateDef.name}" — none of its required plugins are active: ${required.join(', ')}. Activate one in /plugins first.`,
+      required_plugins: required
+    })
+  }
+
   const provisionRequest = { name: sanitizedName, template: sanitizedTemplate, instance_type, port, ttl_hours: ttl_hours || 24 }
 
   // Run policy engine
@@ -75,7 +93,7 @@ router.post('/', async (req, res) => {
     status: 'provisioning',
     instance_type: instance_type || 't3.micro',
     port: port || 3000,
-    region: (process.env.INFRA_MODE === 'aws') ? (process.env.AWS_REGION || 'us-east-1') : 'local',
+    region: activePlugin === 'aws' ? (process.env.AWS_REGION || 'us-east-1') : 'local',
     created_at: now.toISOString(),
     updated_at: now.toISOString(),
     ttl_hours: provisionRequest.ttl_hours,
