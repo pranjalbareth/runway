@@ -15,11 +15,12 @@ const POLICIES = [
   },
   {
     id: 'ttl-required',
-    description: 'All environments must have a TTL between 1 and 72 hours',
+    description: 'All environments must have a TTL between 30 seconds and 72 hours',
     check: (req) => {
       const ttl = req.ttl_hours
-      if (!ttl || ttl < 1 || ttl > 72) {
-        return { passed: false, message: `TTL must be between 1 and 72 hours. Got: ${ttl}` }
+      const minHours = 30 / 3600
+      if (!ttl || ttl < minHours || ttl > 72) {
+        return { passed: false, message: `TTL must be between 30s and 72 hours. Got: ${ttl}` }
       }
       return { passed: true }
     }
