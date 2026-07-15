@@ -1,0 +1,144 @@
+.plugins { max-width: 900px; width: 100%; margin: 0 auto; }
+
+.plugins-loading {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text3);
+  padding: 40px 0;
+}
+
+.plugins-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.plugin-card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.15s;
+}
+
+.plugin-card.is-active {
+  border-color: rgba(200, 241, 53, 0.4);
+}
+
+.plugin-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.plugin-icon {
+  font-size: 26px;
+  width: 40px;
+  text-align: center;
+  line-height: 1;
+}
+
+.plugin-title { flex: 1; }
+
+.plugin-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.plugin-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+}
+
+.plugin-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.55;
+}
+
+.plugin-check {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.check-row.check-idle { color: var(--text3); }
+.check-row.check-ok   { color: #6fcf73; }
+.check-row.check-fail { color: var(--danger); }
+
+.check-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.check-msg {
+  word-break: break-word;
+}
+
+.check-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.check-error {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--danger);
+  padding-top: 4px;
+}
+
+.plugin-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+}
+
+.badge-active {
+  background: rgba(200, 241, 53, 0.15);
+  color: var(--accent);
+  border-color: rgba(200, 241, 53, 0.4);
+}
+
+.badge-inactive {
+  background: var(--bg3);
+  color: var(--text3);
+  border-color: var(--border);
+}
+
+.badge-error {
+  background: rgba(255, 68, 68, 0.1);
+  color: var(--danger);
+  border-color: rgba(255, 68, 68, 0.3);
+}

@@ -22,6 +22,9 @@ export default function App() {
           <NavLink to="/audit" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
             Audit Log
           </NavLink>
+          <NavLink to="/plugins" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            Plugins
+          </NavLink>
         </div>
         <div className="nav-mode">
           <span className="mode-dot" />
