@@ -18,6 +18,7 @@ function ttlRemaining(expiresAt) {
   if (!expiresAt) return null
   const diff = new Date(expiresAt).getTime() - Date.now()
   if (diff <= 0) return 'Expired'
+  if (diff < 60000) return `${Math.ceil(diff / 1000)}s`
   const hrs = Math.floor(diff / 3600000)
   const mins = Math.floor((diff % 3600000) / 60000)
   return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
@@ -28,6 +29,13 @@ export default function Dashboard() {
   const [activeLog, setActiveLog] = useState(null)
   const [destroying, setDestroying] = useState(null)
   const [searchParams] = useSearchParams()
+
+  // 1-second tick so TTL countdowns stay live without waiting for the 5s poll
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
 
   // Auto-open log pane for newly provisioned env
   useEffect(() => {
@@ -108,9 +116,16 @@ export default function Dashboard() {
 
                 <div className="env-card-meta">
                   <span>Created {timeAgo(env.created_at)}</span>
-                  {env.expires_at && env.status === 'running' && (
-                    <span className="ttl-remaining">⏱ TTL: {ttlRemaining(env.expires_at)} remaining</span>
-                  )}
+                  {env.expires_at && ['provisioning', 'running'].includes(env.status) && (() => {
+                    const remaining = ttlRemaining(env.expires_at)
+                    if (!remaining) return null
+                    const expired = remaining === 'Expired'
+                    return (
+                      <span className={`ttl-remaining${expired ? ' ttl-expired' : ''}`}>
+                        ⏱ TTL: {expired ? 'Expired' : `${remaining} remaining`}
+                      </span>
+                    )
+                  })()}
                 </div>
 
                 <div className="env-card-actions">

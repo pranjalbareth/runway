@@ -1,179 +1,154 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEnvironments } from '../hooks/useEnvironments'
+import TemplateDetailModal from '../components/TemplateDetailModal'
 import './Catalog.css'
 
-const TEMPLATE_ICONS = {
-  'nodejs-docker': '⬡',
-  'static-nginx': '◈',
-  'ec2-aws': '▣',
-  's3-static-site': '◉',
-  'serverless-lambda': '⚡',
-  'sqs-worker': '⇶',
-  'dynamodb-app': '⬡',
-  'eventbridge-pipeline': '⟳',
-}
-
-const INSTANCE_TYPES = ['t3.micro', 't3.small']
+const PLUGIN_GROUPS = [
+  { id: 'docker',    label: 'Docker',    description: 'Local container stacks' },
+  { id: 'mockcloud', label: 'MockCloud', description: 'Cloud templates against the local emulator' },
+  { id: 'aws',       label: 'AWS',       description: 'Cloud templates against real AWS' }
+]
 
 export default function Catalog() {
   const [templates, setTemplates] = useState([])
+  const [allTemplates, setAllTemplates] = useState([])
+  const [plugins, setPlugins] = useState([])
   const [selected, setSelected] = useState(null)
-  const [form, setForm] = useState({ name: '', instance_type: 't3.micro', port: '', ttl_hours: 24 })
-  const [errors, setErrors] = useState([])
-  const [submitting, setSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { provision } = useEnvironments()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetch('/api/templates')
-      .then(r => r.json())
-      .then(setTemplates)
-      .catch(console.error)
-  }, [])
-
-  const openModal = (template) => {
-    setSelected(template)
-    setForm({ name: '', instance_type: 't3.micro', port: template.defaultPort || '', ttl_hours: 24 })
-    setErrors([])
-  }
-
-  const closeModal = () => {
-    setSelected(null)
-    setErrors([])
-  }
-
-  const handleProvision = async () => {
-    setSubmitting(true)
-    setErrors([])
+  async function load() {
+    setLoading(true)
     try {
-      const result = await provision({
-        name: form.name,
-        template: selected.id,
-        instance_type: form.instance_type,
-        port: Number(form.port),
-        ttl_hours: Number(form.ttl_hours)
-      })
-      closeModal()
-      navigate(`/dashboard?highlight=${result.id}`)
-    } catch (err) {
-      if (err.violations) {
-        setErrors(err.violations.map(v => v.message))
-      } else {
-        setErrors([err.error || 'Provisioning failed'])
-      }
+      const [visibleRes, allRes, pluginRes] = await Promise.all([
+        fetch('/api/templates').then((r) => r.json()),
+        fetch('/api/templates?all=true').then((r) => r.json()),
+        fetch('/api/plugins').then((r) => r.json())
+      ])
+      setTemplates(visibleRes)
+      setAllTemplates(allRes)
+      setPlugins(pluginRes)
+    } catch (e) {
+      console.error(e)
     } finally {
-      setSubmitting(false)
+      setLoading(false)
     }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const activePluginIds = useMemo(
+    () => new Set(plugins.filter((p) => p.status === 'active').map((p) => p.id)),
+    [plugins]
+  )
+
+  const grouped = useMemo(() => {
+    const buckets = new Map(PLUGIN_GROUPS.map((g) => [g.id, []]))
+    for (const t of allTemplates) {
+      for (const pid of t.requiredPlugins || []) {
+        if (buckets.has(pid)) buckets.get(pid).push(t)
+      }
+    }
+    return buckets
+  }, [allTemplates])
+
+  function pluginActiveForTemplate(t) {
+    return (t.requiredPlugins || []).some((id) => activePluginIds.has(id))
+  }
+
+  async function handleProvision(payload) {
+    const result = await provision(payload)
+    setSelected(null)
+    navigate(`/dashboard?highlight=${result.id}`)
   }
 
   return (
     <div className="catalog">
       <div className="page-header">
         <div className="page-title">Service Catalog</div>
-        <div className="page-subtitle">Pick a template to provision a new environment</div>
+        <div className="page-subtitle">
+          Pick a composite template to provision. Click any card for details, resources, and Terraform source.
+        </div>
       </div>
 
+      {loading ? (
+        <div className="catalog-loading">Loading catalog…</div>
+      ) : (
+        PLUGIN_GROUPS.map((group) => {
+          const items = grouped.get(group.id) || []
+          const active = activePluginIds.has(group.id)
+          return (
+            <PluginGroup
+              key={group.id}
+              group={group}
+              templates={items}
+              pluginActive={active}
+              onSelect={setSelected}
+            />
+          )
+        })
+      )}
+
+      {selected && (
+        <TemplateDetailModal
+          template={selected}
+          pluginActive={pluginActiveForTemplate(selected)}
+          onClose={() => setSelected(null)}
+          onProvision={handleProvision}
+        />
+      )}
+    </div>
+  )
+}
+
+function PluginGroup({ group, templates, pluginActive, onSelect }) {
+  return (
+    <section className="catalog-group">
+      <div className="catalog-group-head">
+        <div>
+          <div className="catalog-group-title">{group.label}</div>
+          <div className="catalog-group-desc">{group.description}</div>
+        </div>
+        <span className={`badge ${pluginActive ? 'badge-active' : 'badge-inactive'}`}>
+          {pluginActive ? 'PLUGIN ACTIVE' : 'PLUGIN INACTIVE'}
+        </span>
+      </div>
+
+      {templates.length === 0 ? (
+        <div className="catalog-empty">No templates registered for this plugin.</div>
+      ) : !pluginActive ? (
+        <div className="catalog-locked">
+          <div>{templates.length} template{templates.length === 1 ? '' : 's'} available — activate the {group.label} plugin to provision.</div>
+          <Link to="/plugins" className="catalog-locked-link">Open Plugins page →</Link>
+        </div>
+      ) : null}
+
       <div className="template-grid">
-        {templates.map(t => (
-          <div key={t.id} className="template-card" onClick={() => openModal(t)}>
-            <div className="template-icon">{TEMPLATE_ICONS[t.id] || '◆'}</div>
+        {templates.map((t) => (
+          <div
+            key={t.id}
+            className={`template-card ${pluginActive ? '' : 'template-card-disabled'}`}
+            onClick={() => onSelect(t)}
+          >
+            <div className="template-icon">{t.icon || '◆'}</div>
             <div className="template-info">
-              <div className="template-name">{t.name}</div>
+              <div className="template-name">
+                {t.name}
+                {t.subtitle && <span className="template-subtitle"> — {t.subtitle}</span>}
+              </div>
               <div className="template-desc">{t.description}</div>
               <div className="template-tags">
-                {t.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+                {(t.tags || []).map((tag) => <span key={tag} className="tag">{tag}</span>)}
               </div>
             </div>
             <div className="template-action">
-              Provision <span>→</span>
+              Details <span>→</span>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Provision Modal */}
-      {selected && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title">Provision — {selected.name}</div>
-              <button className="modal-close" onClick={closeModal}>✕</button>
-            </div>
-
-            <div className="modal-body">
-              <div className="field">
-                <label className="label">Environment name</label>
-                <input
-                  type="text"
-                  placeholder="my-feature-env"
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                />
-                <span className="field-hint">Lowercase, hyphens only. e.g. auth-v2-test</span>
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <label className="label">Instance type</label>
-                  <select value={form.instance_type} onChange={e => setForm(f => ({ ...f, instance_type: e.target.value }))}>
-                    {INSTANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                {selected.defaultPort && (
-                  <div className="field">
-                    <label className="label">Port</label>
-                    <input
-                      type="number"
-                      value={form.port}
-                      onChange={e => setForm(f => ({ ...f, port: e.target.value }))}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="field">
-                <label className="label">TTL (hours) — auto-destroy after</label>
-                <select value={form.ttl_hours} onChange={e => setForm(f => ({ ...f, ttl_hours: e.target.value }))}>
-                  {[1, 4, 8, 12, 24, 48, 72].map(h => (
-                    <option key={h} value={h}>{h}h{h === 24 ? ' (default)' : ''}</option>
-                  ))}
-                </select>
-                <span className="field-hint">Environment will be automatically destroyed after TTL expires</span>
-              </div>
-
-              <div className="policy-notice">
-                <div className="policy-notice-title">▲ POLICY GUARDRAILS</div>
-                <div className="policy-notice-rules">
-                  <span>Max t3.small</span>
-                  <span>TTL 1–72h required</span>
-                  <span>Lowercase name only</span>
-                  <span>Port 1024–9999</span>
-                </div>
-              </div>
-
-              {errors.length > 0 && (
-                <div className="modal-errors">
-                  {errors.map((e, i) => (
-                    <div key={i} className="modal-error">✕ {e}</div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn-ghost" onClick={closeModal}>Cancel</button>
-              <button
-                className="btn-primary"
-                onClick={handleProvision}
-                disabled={submitting || !form.name}
-              >
-                {submitting ? 'Sending to Terraform...' : 'Provision Environment'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </section>
   )
 }

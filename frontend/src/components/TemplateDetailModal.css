@@ -1,0 +1,225 @@
+.modal-detail {
+  width: 720px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-header {
+  align-items: flex-start;
+}
+
+.detail-header-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.detail-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.detail-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.detail-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover { color: var(--text); }
+.tab.tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.detail-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.detail-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+.detail-section { display: flex; flex-direction: column; gap: 8px; }
+
+.detail-section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.resource-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.resource-row {
+  display: grid;
+  grid-template-columns: 220px 130px 1fr;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  align-items: center;
+}
+.resource-row:first-child { border-top: none; }
+
+.resource-type {
+  color: var(--accent);
+}
+
+.resource-name {
+  color: var(--text);
+}
+
+.resource-desc {
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.resource-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text3);
+  padding: 14px;
+  text-align: center;
+}
+
+.plugin-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.plugin-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  background: rgba(200, 241, 53, 0.08);
+  border: 1px solid rgba(200, 241, 53, 0.2);
+  color: var(--accent);
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+.plugin-pill-none {
+  background: var(--bg3);
+  border-color: var(--border);
+  color: var(--text3);
+}
+
+.detail-warning {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #f0b952;
+  background: rgba(240, 185, 82, 0.06);
+  border: 1px solid rgba(240, 185, 82, 0.2);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  line-height: 1.5;
+}
+
+.detail-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.detail-link:hover { text-decoration: underline; }
+
+.code-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.55;
+  overflow: auto;
+  max-height: 60vh;
+  white-space: pre;
+  margin: 0;
+}
+
+.name-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.name-input-row input {
+  flex: 1;
+}
+
+.btn-reroll {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text2);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  line-height: 1;
+  padding: 0;
+}
+
+.btn-reroll:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(200, 241, 53, 0.06);
+}
+
+.code-loading,
+.code-error {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text3);
+  padding: 14px;
+}
+.code-error { color: var(--danger); }
