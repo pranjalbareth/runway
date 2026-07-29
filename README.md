@@ -1,6 +1,6 @@
 # ▲ Runway - Internal Developer Platform
 
-A self-service IDP that lets developers provision isolated environments via a web UI. Terraform runs under the hood, streaming live output to the browser over WebSockets. Includes a policy engine, TTL-based auto-destroy, and a full audit log.
+A self-service IDP that lets developers provision isolated environments via a web UI. Terraform runs under the hood, streaming live output to the browser over WebSockets. Includes a policy engine, a plugin-gated template catalog, TTL-based auto-destroy, and a full audit log.
 
 ## Architecture
 
@@ -10,15 +10,16 @@ React Frontend (Vite)
     ▼
 Node.js Backend (Express + ws)
     ├── Policy Engine     → validates every provision request
+    ├── Plugin System     → health-checks Docker / MockCloud / AWS, gates template visibility
     ├── Terraform Runner  → child_process.spawn, streams stdout over WS
-    ├── SQLite            → environment state + audit log
+    ├── SQLite            → environment state, audit log, plugin status
     └── TTL Scheduler     → auto-destroys environments after expiry
             │
             ▼
-    Terraform (Docker provider in local mode, AWS provider in prod)
+    Terraform (Docker provider locally, AWS provider in prod)
             │
             ▼
-    Docker containers (local) / EC2 + VPC + IAM (AWS)
+    Docker containers (local) / EC2, S3, Lambda, SQS, DynamoDB, EventBridge (AWS)
 ```
 
 ## Stack
@@ -80,30 +81,44 @@ Copy `.env.example` to `.env` and fill in the values.
 Every provision request is evaluated against rules before Terraform runs:
 
 - **Instance type**: only `t3.micro` and `t3.small` allowed
-- **TTL**: required, 1–72 hours
+- **TTL**: required, 30 seconds–72 hours
 - **Name format**: lowercase alphanumeric + hyphens only
 - **Port range**: 1024–9999 only
 
 Violations are returned to the frontend before any infra is touched.
 
+## Plugins
+
+Templates are gated behind three plugins, each with a runtime health check (`GET /api/plugins`, `POST /api/plugins/:id/check`). A template is only visible in the catalog once one of its `requiredPlugins` is active.
+
+| Plugin | Checks | Used by |
+|--------|--------|---------|
+| `docker` | `docker info` reachable | Hangar, Squadron, Beacon |
+| `mockcloud` | LocalStack-style emulator at `MOCKCLOUD_ENDPOINT` responds | Jetstream, Cascade, Tower, Raptor, Cargo |
+| `aws` | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` present | Jetstream, Cascade, Tower, Cargo |
+
 ## Templates
 
-| Template | Description |
-|----------|-------------|
-| `nodejs-docker` | Node.js app container (simulates EC2) |
-| `static-nginx` | Nginx static site container (simulates S3 + CloudFront) |
-| `ec2-aws` | Real AWS EC2 instance in a VPC |
-| `s3-static-site` | AWS S3 bucket + CloudFront distribution |
-| `serverless-lambda` | AWS Lambda function |
-| `sqs-worker` | AWS SQS queue with a worker |
-| `dynamodb-app` | AWS DynamoDB table |
-| `eventbridge-pipeline` | AWS EventBridge rule + target pipeline |
+Every template is a composite stack (multiple Terraform resources provisioned together), not a single resource.
 
-Local templates (`nodejs-docker`, `static-nginx`) use the Terraform Docker provider and require only Docker Desktop. AWS templates require `INFRA_MODE=aws` and valid credentials.
+| Template | Subtitle | Plugin(s) | Resources |
+|----------|----------|-----------|-----------|
+| 🛩️ `hangar` | Full-Stack Node Workspace — nginx + Node app + Redis | `docker` | 4 |
+| ✈️ `squadron` | Microservices Mesh — nginx gateway + 2 backend services | `docker` | 4 |
+| 🗼 `beacon` | Static Site Edge — nginx edge cache + nginx origin | `docker` | 3 |
+| 🚀 `jetstream` | Serverless API — Lambda + API Gateway + DynamoDB | `mockcloud`, `aws` | 4 |
+| 🌊 `cascade` | Event Pipeline — SQS + DLQ + Lambda worker + DynamoDB | `mockcloud`, `aws` | 5 |
+| 🏗️ `tower` | Three-Tier Web App — EC2 + security group + S3 + IAM | `mockcloud`, `aws` | 4 |
+| 🦅 `raptor` | The Everything Stack — every AWS service Runway supports, in one provision | `mockcloud` | 17 |
+| 📦 `cargo` | Data Lake Platform — S3 ingest → EventBridge → Lambda transformer → DynamoDB | `mockcloud`, `aws` | 5 |
+
+Docker templates (`hangar`, `squadron`, `beacon`) require only Docker Desktop. Cloud templates run against MockCloud (LocalStack-style, no credentials needed) when `INFRA_MODE=local`, or real AWS when `INFRA_MODE=aws` with valid credentials.
+
+Full resource-level detail and generated Terraform source for any template are available via `GET /api/templates/:id` and `GET /api/templates/:id/code`.
 
 ## TTL Auto-Destroy
 
-Every environment is provisioned with a TTL (1–72h). A Node.js `setTimeout` scheduler fires `terraform destroy` automatically when the TTL expires, preventing cloud sprawl.
+Every environment is provisioned with a TTL (30s–72h). A Node.js `setTimeout` scheduler fires `terraform destroy` automatically when the TTL expires, preventing cloud sprawl.
 
 ## CI/CD
 
