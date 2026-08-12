@@ -183,11 +183,8 @@ resource "aws_sqs_queue" "inbox" {
   })
 }
 
-# SNS skipped in local mode: MockCloud's CreateTopic returns 200 but
-# GetTopicAttributes returns malformed XML, so terraform refresh fails.
 resource "aws_sns_topic" "fanout" {
-  count = var.infra_mode == "local" ? 0 : 1
-  name  = "runway-${var.env_name}-raptor-fanout"
+  name = "runway-${var.env_name}-raptor-fanout"
   tags = {
     managed-by = "runway"
     env-id     = var.env_id
@@ -195,7 +192,7 @@ resource "aws_sns_topic" "fanout" {
 }
 
 locals {
-  fanout_topic_arn = var.infra_mode == "local" ? "arn:aws:sns:us-east-1:000000000000:runway-${var.env_name}-raptor-fanout-stub" : aws_sns_topic.fanout[0].arn
+  fanout_topic_arn = aws_sns_topic.fanout.arn
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -322,11 +319,7 @@ resource "aws_instance" "web" {
 # ─────────────────────────────────────────────────────────────────────────────
 # Observability + scheduling — CloudWatch log group + EventBridge tick
 # ─────────────────────────────────────────────────────────────────────────────
-# Log group skipped in local mode: MockCloud's CreateLogGroup returns 200
-# but DescribeLogGroups returns XML (an S3-style stub) where the AWS provider
-# expects JSON, so terraform refresh fails to deserialize.
 resource "aws_cloudwatch_log_group" "app_logs" {
-  count             = var.infra_mode == "local" ? 0 : 1
   name              = "/runway/${var.env_name}/raptor"
   retention_in_days = 7
   tags = {
@@ -356,7 +349,7 @@ output "table_name" { value = "runway-${var.env_name}-raptor" }
 output "queue_name" { value = "runway-${var.env_name}-raptor-queue" }
 output "dlq_name" { value = "runway-${var.env_name}-raptor-dlq" }
 output "fanout_topic" { value = local.fanout_topic_arn }
-output "log_group" { value = var.infra_mode == "local" ? "(skipped — MockCloud has no CloudWatch Logs DescribeLogGroups support)" : aws_cloudwatch_log_group.app_logs[0].name }
+output "log_group" { value = aws_cloudwatch_log_group.app_logs.name }
 output "tick_rule" { value = aws_cloudwatch_event_rule.tick.name }
 output "instance_id" { value = aws_instance.web.id }
 output "infra_mode" { value = var.infra_mode }

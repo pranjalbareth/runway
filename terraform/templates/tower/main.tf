@@ -63,11 +63,9 @@ provider "aws" {
   }
 }
 
-# ── IAM role + instance profile (skipped in local mode — MockCloud's IAM
-#    emulator returns malformed XML for CreateInstanceProfile) ──
+# ── IAM role + instance profile ──
 resource "aws_iam_role" "instance_role" {
-  count = var.infra_mode == "local" ? 0 : 1
-  name  = "runway-${var.env_name}-tower-role"
+  name = "runway-${var.env_name}-tower-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -79,9 +77,8 @@ resource "aws_iam_role" "instance_role" {
 }
 
 resource "aws_iam_instance_profile" "instance" {
-  count = var.infra_mode == "local" ? 0 : 1
-  name  = "runway-${var.env_name}-tower-profile"
-  role  = aws_iam_role.instance_role[0].name
+  name = "runway-${var.env_name}-tower-profile"
+  role = aws_iam_role.instance_role.name
 }
 
 # ── Security group: open app_port to the world ──
@@ -114,7 +111,7 @@ resource "aws_instance" "web" {
   ami                  = "ami-0c55b159cbfafe1f0"
   instance_type        = var.instance_type
   security_groups      = [aws_security_group.web_sg.name]
-  iam_instance_profile = var.infra_mode == "local" ? null : aws_iam_instance_profile.instance[0].name
+  iam_instance_profile = aws_iam_instance_profile.instance.name
 
   tags = {
     Name       = "runway-${var.env_name}-web"
